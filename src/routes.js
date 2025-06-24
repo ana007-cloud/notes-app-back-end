@@ -11,7 +11,7 @@ const routes = [
     method: 'POST',
     path: '/notes',
     handler: addNoteHandler,
-    option: {
+    options: {
       payload: {
         parse: true,
         allow: 'application/json',
