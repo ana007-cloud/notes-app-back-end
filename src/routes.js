@@ -11,6 +11,12 @@ const routes = [
     method: 'POST',
     path: '/notes',
     handler: addNoteHandler,
+    option: {
+      payload: {
+        parse: true,
+        allow: 'application/json',
+      },
+    },
   },
   {
     method: 'GET',
