@@ -1,5 +1,3 @@
-const { addNoteHandler } = require("../../handler");
-
 const routes = (handler) => [
   {
     method: 'POST',
