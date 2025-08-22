@@ -1,17 +1,17 @@
-const mapDBToModel = ({ 
+const mapDBToModel = ({
   id,
   title,
   body,
   tags,
-  created_at,
-  updated_at,
+  created_at: createdAt,   // alias snake_case → camelCase
+  updated_at: updatedAt,   // alias snake_case → camelCase
 }) => ({
   id,
   title,
   body,
   tags,
-  createdAt: created_at,
-  updatedAt: updated_at,
+  createdAt,
+  updatedAt,
 });
-     
+
 module.exports = { mapDBToModel };

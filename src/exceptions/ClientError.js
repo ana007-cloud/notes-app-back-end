@@ -3,7 +3,7 @@ class ClientError extends Error {
     super(message);
     this.statusCode = statusCode;
     this.name = 'ClientError';
-    }
   }
-     
+}
+
 module.exports = ClientError;
