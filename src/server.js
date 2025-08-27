@@ -2,6 +2,7 @@
 require('dotenv').config();
 
 const Hapi = require('@hapi/hapi');
+const Jwt = require('@hapi/jwt');
 
 // notes
 const notes = require('./api/notes'); // Import API modules
@@ -14,9 +15,16 @@ const users = require('./api/users'); // Import API modules
 const UsersService = require('./services/postgres/UsersService'); // Import services
 const UsersValidator = require('./validator/users'); // Import validators
 
+// authentications
+const authentications = require('./api/authentications');
+const AuthenticationsService = require('./services/postgres/AuthenticationsService');
+const TokenManager = require('./tokenize/TokenManager');
+const AuthenticationsValidator = require('./validator/authentications');
+
 const init = async () => {
   const notesService = new NotesService();
   const usersService = new UsersService();
+  const authenticationsService = new AuthenticationsService();
 
   // Create Hapi server instance
   const server = Hapi.server({
@@ -27,6 +35,30 @@ const init = async () => {
         origin: ['*'],
       },
     },
+  });
+
+  // Register external plugin
+  await server.register([
+    {
+      plugin: Jwt,
+    },
+  ]);
+
+  // Define jwt authentication strategy
+  server.auth.strategy('notesapp_jwt', 'jwt', {
+    keys: process.env.ACCESS_TOKEN_KEY,
+    verify: {
+      aud: false,
+      iss: false,
+      sub: false,
+      maxAgeSec: process.env.ACCESS_TOKEN_AGE,
+    },
+    validate: (artifacts) => ({
+      isValid: true,
+      credentials: {
+        id: artifacts.decoded.payload.id,
+      },
+    }),
   });
 
   // Register notes plugin with service and validator
@@ -45,57 +77,32 @@ const init = async () => {
         validator: UsersValidator,
       },
     },
+    {
+      plugin: authentications,
+      options: {
+        authenticationsService,
+        usersService,
+        tokenManager: TokenManager,
+        validator: AuthenticationsValidator,
+      },
+    },
   ]);
 
   // Global error handling with onPreResponse extension
   server.ext('onPreResponse', (request, h) => {
     const { response } = request; // Extract the response object
 
-    // If not an error, continue to route handler
-    if (!(response instanceof Error)) {
-      return h.continue;
-    }
-
-    let newResponse;
-
     // Handle controlled errors from our custom ClientError class
     if (response instanceof ClientError) {
-      newResponse = h.response({
+      const newResponse = h.response({
         status: 'fail',
         message: response.message,
-      }).code(response.statusCode);
+      });
+      newResponse.code(response.statusCode);
+      return newResponse;
     }
 
-    // Handle Hapi's internal (Boom) errors
-    else if (response.isBoom) {
-      const { statusCode, payload } = response.output;
-
-      // Handle server errors (5xx)
-      if (statusCode >= 500) {
-        console.error('Internal server error:', response); // DEBUG: inspect in server logs
-        newResponse = h.response({
-          status: 'error',
-          message: 'Terjadi kegagalan pada server kami',
-        }).code(statusCode);
-      } else {  // Handle client errors (4xx) like validation failures
-        newResponse = h.response({
-          status: 'fail',
-          message: payload.message, // <-- Use payload.message for Hapi validation messages
-        }).code(statusCode);
-      }
-    }
-
-    // Choose Content-Type based on route path
-    const path = request.route.path;
-    if (path.startsWith('/users')) {
-      newResponse.type('application/json; charset=utf-8'); // with space
-    } else if (path.startsWith('/notes')) {
-      newResponse.type('application/json;charset=utf-8'); // without space
-    } else {
-      newResponse.type('application/json');
-    }
-
-    return newResponse;
+    return h.continue;
   });
 
   await server.start();

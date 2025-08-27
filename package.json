@@ -17,11 +17,14 @@
     "@eslint/js": "^9.29.0",
     "eslint": "^9.29.0",
     "eslint-config-dicodingacademy": "^0.9.4",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.4",
     "globals": "^16.2.0",
     "nodemon": "^3.1.10"
   },
   "dependencies": {
     "@hapi/hapi": "^21.4.0",
+    "@hapi/jwt": "^3.2.0",
     "bcrypt": "^6.0.0",
     "dotenv": "^17.2.1",
     "joi": "^18.0.0",

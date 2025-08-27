@@ -20,12 +20,12 @@ class UsersHandler {
         userId,
       },
     });
-    // add .type('application/json') to make sure the header is correct
+
     response.code(201);
     return response;
   }
 
-  async getUserByIdHandler(request) {
+  async getUserByIdHandler(request, h) {
     const { id } = request.params;
 
     const user = await this._service.getUserById(id);
